@@ -5,6 +5,8 @@ import java.sql.DriverManager;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.util.ArrayList;
+import java.util.List;
 
 import org.apache.commons.lang3.StringUtils;
 
@@ -53,20 +55,28 @@ public class SqlHelper {
 		}
 	}
 
-	public SleppsResultSet executeQuery() throws SleppsException {
+	public List<SleppsDataRow> executeQuery() throws SleppsException {
 		if (nullParametersExist()) {
 			throw new SleppsException("Not all query parameters are set", null);
 		}
 
 		try {
 			resultSet = preparedStatement.executeQuery();
-			return new SleppsResultSet(resultSet);
-		} catch (SQLException e) {
-			throw new SleppsException("Error executing prepared statement", e);
+			return transformResultSet(resultSet);
+		} catch (SQLException e) {			throw new SleppsException("Error executing prepared statement", e);
 		} finally {
 			close(resultSet);
 			close(preparedStatement);
 		}
+	}
+
+	private List<SleppsDataRow> transformResultSet(ResultSet resultSet) throws SQLException{
+		List<SleppsDataRow> dataTable = new ArrayList<SleppsDataRow>();
+		while (resultSet.next()) {
+			dataTable.add(new SleppsDataRow(resultSet));
+		}
+		return dataTable;
+
 	}
 
 	public void setString(int parameterIndex, String theString)
