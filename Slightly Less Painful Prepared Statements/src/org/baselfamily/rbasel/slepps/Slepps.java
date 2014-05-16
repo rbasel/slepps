@@ -7,33 +7,36 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Properties;
 
 import org.apache.commons.lang3.StringUtils;
 
-public class SqlHelper {
+public class Slepps {
 	private java.sql.Connection connection = null;
 	private PreparedStatement preparedStatement = null;
 	private ResultSet resultSet = null;
 	private String query;
 	private String[] queryParameters;
 
-	public SqlHelper(Connection connection) {
+	public Slepps(Connection connection) {
 		this.connection = connection;
 	}
 
-	public SqlHelper() throws SleppsException {
-		this("jdbc:mysql://localhost/feedback", "sqluser", "sqluserpw");
+	public Slepps() throws SleppsException {
+		this("com.mysql.jdbc.Driver", "jdbc:mysql://localhost/feedback", "sqluser", "sqluserpw");
 	}
 
-	public SqlHelper(String connectionUrl, String username, String password)
+	public Slepps(String driver, String connectionUrl, String username, String password)
 			throws SleppsException {
-
-		String connectionString = connectionUrl + "?user=" + username
-				+ "&password=" + password;
-		System.out.println(connectionString);
 		try {
-			Class.forName("com.mysql.jdbc.Driver");
-			connection = DriverManager.getConnection(connectionString);
+			Class.forName(driver);
+			
+			Properties info = new Properties();
+			info.setProperty("user", username);
+			info.setProperty("password", password);
+			
+			connection = DriverManager.getConnection(connectionUrl, info );
+			
 		} catch (ClassNotFoundException e) {
 			throw new SleppsException("Unable to load SQL driver", e);
 		} catch (SQLException e) {
@@ -55,7 +58,7 @@ public class SqlHelper {
 		}
 	}
 
-	public List<SleppsDataRow> executeQuery() throws SleppsException {
+	public List<DataRow> executeQuery() throws SleppsException {
 		if (nullParametersExist()) {
 			throw new SleppsException("Not all query parameters are set", null);
 		}
@@ -70,10 +73,10 @@ public class SqlHelper {
 		}
 	}
 
-	private List<SleppsDataRow> transformResultSet(ResultSet resultSet) throws SQLException{
-		List<SleppsDataRow> dataTable = new ArrayList<SleppsDataRow>();
+	private List<DataRow> transformResultSet(ResultSet resultSet) throws SQLException{
+		List<DataRow> dataTable = new ArrayList<DataRow>();
 		while (resultSet.next()) {
-			dataTable.add(new SleppsDataRow(resultSet));
+			dataTable.add(new DataRow(resultSet));
 		}
 		return dataTable;
 

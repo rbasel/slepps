@@ -10,20 +10,16 @@ public class SleppsTest {
 	 * @throws SleppsException
 	 */
 	public static void main(String[] args) throws SleppsException {
-		SqlHelper sqlHelper = new SqlHelper();
+		Slepps sqlHelper = new Slepps();
 		sqlHelper.setQuery("select * from feedback.COMMENTS");
-		List<SleppsDataRow> results = sqlHelper.executeQuery();
+		List<DataRow> results = sqlHelper.executeQuery();
 
-		for (SleppsDataRow dataRow : results) {
-			System.out.println(dataRow.getColumnValue("MYUSER"));
-			System.out.println(dataRow.getColumnValue(1));
-			
-			
-//			String user = resultSet.getString("myuser");
-//			String website = resultSet.getString("webpage");
-//			String summary = resultSet.getString("summary");
-//			Date date = resultSet.getDate("datum");
-//			String comment = resultSet.getString("comments");
+		for (DataRow dataRow : results) {
+			for (DataColumn dc : dataRow) {
+				System.out.println(dc.getName() + " = " + dc.getValue());
+			}
+
+			System.out.println(dataRow.getValue("MYUSER"));
 		}
 	}
 }
