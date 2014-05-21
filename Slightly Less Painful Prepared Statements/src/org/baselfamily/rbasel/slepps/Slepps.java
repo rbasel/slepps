@@ -9,6 +9,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Properties;
 
+import org.apache.commons.dbutils.DbUtils;
 import org.apache.commons.lang3.StringUtils;
 
 public class Slepps {
@@ -23,24 +24,25 @@ public class Slepps {
 	}
 
 	public Slepps() throws SleppsException {
-		this("com.mysql.jdbc.Driver", "jdbc:mysql://localhost/feedback", "sqluser", "sqluserpw");
+		this("com.mysql.jdbc.Driver", "jdbc:mysql://localhost/feedback",
+				"sqluser", "sqluserpw");
 	}
 
-	public Slepps(String driver, String connectionUrl, String username, String password)
-			throws SleppsException {
+	public Slepps(String driver, String connectionUrl, String username,
+			String password) throws SleppsException {
 		try {
 			Class.forName(driver);
-			
+
 			Properties info = new Properties();
 			info.setProperty("user", username);
 			info.setProperty("password", password);
-			
-			connection = DriverManager.getConnection(connectionUrl, info );
-			
+
+			connection = DriverManager.getConnection(connectionUrl, info);
+
 		} catch (ClassNotFoundException e) {
 			throw new SleppsException("Unable to load SQL driver", e);
 		} catch (SQLException e) {
-			throw new SleppsException("Error retrieving connection for URI "
+			throw new SleppsException("Error retrieving connection for URL- "
 					+ connectionUrl, e);
 		}
 	}
@@ -66,14 +68,23 @@ public class Slepps {
 		try {
 			resultSet = preparedStatement.executeQuery();
 			return transformResultSet(resultSet);
-		} catch (SQLException e) {			throw new SleppsException("Error executing prepared statement", e);
+		} catch (SQLException e) {
+			throw new SleppsException("Error executing prepared statement", e);
 		} finally {
-			close(resultSet);
-			close(preparedStatement);
+			DbUtils.closeQuietly(resultSet);
+			try {
+				DbUtils.close(preparedStatement);
+			} catch (SQLException e) {
+			}
 		}
 	}
+	
+	public void closeConnection(){
+		DbUtils.closeQuietly(connection);
+	}
 
-	private List<DataRow> transformResultSet(ResultSet resultSet) throws SQLException{
+	private List<DataRow> transformResultSet(ResultSet resultSet)
+			throws SQLException {
 		List<DataRow> dataTable = new ArrayList<DataRow>();
 		while (resultSet.next()) {
 			dataTable.add(new DataRow(resultSet));
@@ -105,13 +116,13 @@ public class Slepps {
 		return false;
 	}
 
-	private void close(AutoCloseable autoCloseable) {
-		try {
-			if (autoCloseable != null)
-				autoCloseable.close();
-		} catch (Exception e) {
-			// Don't do anything. So as not to interfere with other closures.
+	public String approximateSqlStatement() {
+		StringBuffer returnValue = new StringBuffer(query);
+		for (int i = 0; i < queryParameters.length; i++) {
+			int location = returnValue.indexOf("?");
+			returnValue.replace(location, (location + 1), queryParameters[i]);
 		}
+		return returnValue.toString();
 	}
 
 }
