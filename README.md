@@ -19,7 +19,9 @@ Slepps is my take on that solution.  It's a partial re-imagining of a C# databas
 Referenced Libraries
 --------------------------
 commons-lang3-3.3.2.jar
+
 mysql-connector-java-5.1.30-bin.jar (how to best remove this)
+
 commons-dbutils-1.5.jar
 
 
