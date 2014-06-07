@@ -10,14 +10,12 @@ import java.util.List;
 import java.util.Properties;
 
 import org.apache.commons.dbutils.DbUtils;
-import org.apache.commons.lang3.StringUtils;
 
 public class Slepps {
 	private java.sql.Connection connection = null;
-	private PreparedStatement preparedStatement = null;
+	// private PreparedStatement preparedStatement = null;
 	private ResultSet resultSet = null;
-	private String query;
-	private String[] queryParameters;
+	private StatementProperties statementProperties;
 
 	public Slepps(Connection connection) {
 		this.connection = connection;
@@ -48,38 +46,60 @@ public class Slepps {
 	}
 
 	public void setQuery(String query) throws SleppsException {
-		this.query = query;
-		int count = StringUtils.countMatches(query, "?");
-		queryParameters = new String[count];
-		try {
-			preparedStatement = connection.prepareStatement(query);
-		} catch (SQLException e) {
-			throw new SleppsException(
-					"Unable to generate prepared statement with Query ["
-							+ query + "]", e);
-		}
+		statementProperties = new StatementProperties(query);
 	}
 
-	public List<DataRow> executeQuery() throws SleppsException {
-		if (nullParametersExist()) {
+	public void setParameter(int parameterIndex, Object value)
+			throws SleppsException {
+		statementProperties.setParameter(parameterIndex, value);
+	}
+
+	private PreparedStatement buildPreparedStatement() throws SleppsException,
+			SQLException {
+		if (statementProperties.nullParametersExist()) {
 			throw new SleppsException("Not all query parameters are set", null);
 		}
+		PreparedStatement preparedStatement = connection
+				.prepareStatement(statementProperties.getQuery());
+
+		for (int i = 0; i < statementProperties.getQueryParameters().length; i++) {
+			preparedStatement.setObject(i + 1,
+					statementProperties.getQueryParameters()[i]);
+		}
+
+		return preparedStatement;
+
+	}
+
+	public List<DataRow> executeQuery() throws SleppsException, SQLException {
+		PreparedStatement preparedStatement = buildPreparedStatement();
 
 		try {
 			resultSet = preparedStatement.executeQuery();
 			return transformResultSet(resultSet);
 		} catch (SQLException e) {
-			throw new SleppsException("Error executing prepared statement", e);
+			throw new SleppsException("Error executing prepared statement: "
+					+ statementProperties.approximateSqlStatement(), e);
 		} finally {
 			DbUtils.closeQuietly(resultSet);
-			try {
-				DbUtils.close(preparedStatement);
-			} catch (SQLException e) {
-			}
+			DbUtils.closeQuietly(preparedStatement);
 		}
 	}
-	
-	public void closeConnection(){
+
+	public int executeUpdate() throws SleppsException, SQLException {
+		PreparedStatement preparedStatement = buildPreparedStatement();
+
+		try {
+			return preparedStatement.executeUpdate();
+		} catch (SQLException e) {
+			throw new SleppsException("Error executing prepared statement: "
+					+ statementProperties.approximateSqlStatement(), e);
+		} finally {
+			DbUtils.closeQuietly(preparedStatement);
+		}
+	}
+
+	public void closeConnection() {
 		DbUtils.closeQuietly(connection);
 	}
 
@@ -93,36 +113,7 @@ public class Slepps {
 
 	}
 
-	public void setString(int parameterIndex, String theString)
-			throws SleppsException {
-		queryParameters[parameterIndex - 1] = theString;
-		try {
-			preparedStatement.setString(parameterIndex, theString);
-		} catch (IndexOutOfBoundsException e) {
-			String description = "Trying to set parameter " + parameterIndex
-					+ " when only " + queryParameters.length + " are expected";
-			throw new SleppsException(description, e);
-		} catch (SQLException e) {
-			throw new SleppsException("Error setting query parameter", e);
-		}
-	}
-
-	private boolean nullParametersExist() {
-		for (int i = 0; i < queryParameters.length; i++) {
-			if (queryParameters[i] == null)
-				return true;
-		}
-
-		return false;
-	}
-
 	public String approximateSqlStatement() {
-		StringBuffer returnValue = new StringBuffer(query);
-		for (int i = 0; i < queryParameters.length; i++) {
-			int location = returnValue.indexOf("?");
-			returnValue.replace(location, (location + 1), queryParameters[i]);
-		}
-		return returnValue.toString();
+		return statementProperties.approximateSqlStatement();
 	}
-
 }
