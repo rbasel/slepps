@@ -21,11 +21,6 @@ public class Slepps {
 		this.connection = connection;
 	}
 
-	public Slepps() throws SleppsException {
-		this("com.mysql.jdbc.Driver", "jdbc:mysql://localhost/feedback",
-				"sqluser", "sqluserpw");
-	}
-
 	public Slepps(String driver, String connectionUrl, String username,
 			String password) throws SleppsException {
 		try {

@@ -11,16 +11,13 @@ public class SleppsTest {
 	static Slepps employeeHelper;
 	static Slepps sqlHelper;
 
-	/**
-	 * @param args
-	 * @throws SleppsException
-	 * @throws SQLException
-	 */
 	public static void main(String[] args) throws SleppsException, SQLException {
 		employeeHelper = new Slepps("com.mysql.jdbc.Driver",
 				"jdbc:mysql://localhost/employees", "sqluser", "sqluserpw");
 
 		testSomething();
+		testEmployee();
+		testInsertStatement();
 	}
 
 	public static void testSomething() throws SleppsException, SQLException {
@@ -35,15 +32,6 @@ public class SleppsTest {
 		results = employeeHelper.executeQuery();
 		System.out.println(employeeHelper.approximateSqlStatement());
 		printResults(results,5);
-	}
-
-	public static void testSelectFeedback() throws SleppsException,
-			SQLException {
-		sqlHelper = new Slepps();
-		sqlHelper.setQuery("select * from feedback.COMMENTS");
-		System.out.println(sqlHelper.approximateSqlStatement());
-		List<DataRow> results = sqlHelper.executeQuery();
-		printResults(results,10);
 	}
 
 	public static void testEmployee() throws SleppsException, SQLException {
