@@ -49,24 +49,46 @@ public class Slepps {
 		statementProperties.setParameter(parameterIndex, value);
 	}
 
-	private PreparedStatement buildPreparedStatement() throws SleppsException,
-			SQLException {
-		if (statementProperties.nullParametersExist()) {
-			throw new SleppsException("Not all query parameters are set", null);
+	private PreparedStatement buildPreparedStatement() throws SleppsException {
+		if (statementProperties == null){
+			throw new SleppsException("Query not set.  The query must be set before executing a statement.", null );
 		}
-		PreparedStatement preparedStatement = connection
-				.prepareStatement(statementProperties.getQuery());
+		
+		if (statementProperties.nullParametersExist()) {
+			throw new SleppsException("Not all query parameters are set in the following:\n\t" + statementProperties.approximateSqlStatement(), null);
+		}
+		PreparedStatement preparedStatement;
+		try {
+			preparedStatement = connection.prepareStatement(statementProperties
+					.getQuery());
+		} catch (SQLException e) {
+			throw new SleppsException(
+					"Error retrieving preparedStatement from connection for query "
+							+ statementProperties.getQuery(), e);
+		}
 
 		for (int i = 0; i < statementProperties.getQueryParameters().length; i++) {
-			preparedStatement.setObject(i + 1,
-					statementProperties.getQueryParameters()[i]);
+			try {
+				preparedStatement.setObject(i + 1,
+						statementProperties.getQueryParameters()[i]);
+			} catch (SQLException e) {
+				throw new SleppsException(
+						"Error setting preparedStatementValue for parameter "
+								+ (i + 1), e);
+			}
 		}
 
 		return preparedStatement;
 
 	}
 
-	public List<DataRow> executeQuery() throws SleppsException, SQLException {
+	public List<DataRow> executeQuery(StatementProperties statementProperties)
+			throws SleppsException {
+		this.statementProperties = statementProperties;
+		return executeQuery();
+	}
+
+	public List<DataRow> executeQuery() throws SleppsException {
 		PreparedStatement preparedStatement = buildPreparedStatement();
 
 		try {
@@ -81,7 +103,13 @@ public class Slepps {
 		}
 	}
 
-	public int executeUpdate() throws SleppsException, SQLException {
+	public int executeUpdate(StatementProperties statementProperties)
+			throws SleppsException {
+		this.statementProperties = statementProperties;
+		return executeUpdate();
+	}
+
+	public int executeUpdate() throws SleppsException {
 		PreparedStatement preparedStatement = buildPreparedStatement();
 
 		try {
@@ -99,10 +127,15 @@ public class Slepps {
 	}
 
 	private List<DataRow> transformResultSet(ResultSet resultSet)
-			throws SQLException {
+			throws SleppsException {
+
 		List<DataRow> dataTable = new ArrayList<DataRow>();
-		while (resultSet.next()) {
-			dataTable.add(new DataRow(resultSet));
+		try {
+			while (resultSet.next()) {
+				dataTable.add(new DataRow(resultSet));
+			}
+		} catch (SQLException e) {
+			throw new SleppsException("Error transforming resultSet", e);
 		}
 		return dataTable;
 

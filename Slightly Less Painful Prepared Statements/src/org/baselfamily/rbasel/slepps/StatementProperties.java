@@ -56,8 +56,13 @@ public class StatementProperties {
 		StringBuffer returnValue = new StringBuffer(query);
 		for (int i = 0; i < queryParameters.length; i++) {
 			int location = returnValue.indexOf("?");
-			returnValue.replace(location, (location + 1),
-					approximateQueryParameter(queryParameters[i]));
+			String approximatedValue = approximateQueryParameter(queryParameters[i]);
+			if (approximatedValue == null){
+				approximatedValue = "<Missing Paramenter # " + (i  + 1) + ">";
+			}
+			
+			returnValue.replace(location, (location + 1), approximatedValue
+					);
 		}
 		return returnValue.toString();
 	}
@@ -68,11 +73,13 @@ public class StatementProperties {
 		}
 
 		if (queryParameter instanceof java.util.Date) {
-			return "'" +  new SimpleDateFormat("yyyy-MM-dd hh:mm:ss.SSS")
-					.format((java.util.Date) queryParameter)  + "'";
+			return "'"
+					+ new SimpleDateFormat("yyyy-MM-dd hh:mm:ss.SSS")
+							.format((java.util.Date) queryParameter) + "'";
 		}
 
-		return "'" + queryParameter.toString() + "'";
+		return (queryParameter == null) ? null : "'"
+				+ queryParameter.toString() + "'";
 
 	}
 }

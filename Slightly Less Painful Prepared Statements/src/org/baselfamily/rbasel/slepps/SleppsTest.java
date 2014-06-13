@@ -1,7 +1,6 @@
 package org.baselfamily.rbasel.slepps;
 
 import java.sql.SQLException;
-import java.util.Arrays;
 import java.util.Calendar;
 import java.util.List;
 
@@ -9,15 +8,28 @@ public class SleppsTest {
 	static List<DataRow> results;
 	static String query;
 	static Slepps employeeHelper;
-	static Slepps sqlHelper;
 
 	public static void main(String[] args) throws SleppsException, SQLException {
 		employeeHelper = new Slepps("com.mysql.jdbc.Driver",
 				"jdbc:mysql://localhost/employees", "sqluser", "sqluserpw");
 
-		testSomething();
+		// testSomething();
 		testEmployee();
-		testInsertStatement();
+		// testInsertStatement();
+
+		//testBadThings();
+
+		employeeHelper.closeConnection();
+	}
+
+	public static void testBadThings() throws SleppsException {
+		Slepps sqlHelper = new Slepps("com.mysql.jdbc.Driver",
+				"jdbc:mysql://localhost/employees", "sqluser", "sqluserpw");
+		sqlHelper.setQuery("blahalaldsfasf ?");
+		sqlHelper.executeQuery();
+
+		// TODO Auto-generated method stub
+
 	}
 
 	public static void testSomething() throws SleppsException, SQLException {
@@ -31,7 +43,7 @@ public class SleppsTest {
 
 		results = employeeHelper.executeQuery();
 		System.out.println(employeeHelper.approximateSqlStatement());
-		printResults(results,5);
+		printResults(results, 5);
 	}
 
 	public static void testEmployee() throws SleppsException, SQLException {
@@ -62,11 +74,9 @@ public class SleppsTest {
 		for (DataRow dr : results) {
 			StatementProperties insertStatement = dr
 					.buildInsertStatement("employees.dept_emp22");
-			System.out.println(insertStatement.getQuery());
-			System.out.println(Arrays.toString(insertStatement
-					.getQueryParameters()));
-		}
 
+			employeeHelper.executeUpdate(insertStatement);
+		}
 	}
 
 	private static void printResults(List<DataRow> results, int limit) {
